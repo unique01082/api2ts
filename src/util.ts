@@ -49,8 +49,8 @@ export const writeFile = (folderPath: string, fileName: string, content: string)
 
 export const getTagName = (name: string) => {
   const result = name.split('.');
-  // 数据源中的 tag 等同于全量的 op API 名，确定为 4-5 段，如上格式
-  // 取中间的 1-2 字段作为 tag，作为 serviceController 创建目录的依据
+  // The tag in the data source is equivalent to the full op API name, which is determined to be 4-5 segments, as shown above
+  // Take the middle 1-2 fields as the tag, as the basis for the serviceController to create a directory
   if (result.length === 4) {
     return result[2];
   }
@@ -61,10 +61,10 @@ export const getTagName = (name: string) => {
 };
 
 /**
- * 根据当前的数据源类型，对请求回来的 apiInfo 进行格式化
- * 如果是 op 数据源，对 tags 以及 path 中的 tags 进行处理
- * - before: 前缀（产品集.产品码） + 操作对象（必填）+ 子操作对象（可选）+ 动作（必填）
- * - after: 操作对象（必填）+ 子操作对象（可选） ==> 驼峰
+ * Format the apiInfo returned by the request according to the current data source type
+ * If it is an op data source, process the tags and tags in the path
+ * - before: prefix (product set. product code) + operation object (required) + sub-operation object (optional) + action (required)
+ * - after: operation object (required) + sub-operation object (optional) ==> camel case
  */
 export const formatApiInfo = (apiInfo: Record<string, any>): any => {
   if (
@@ -75,7 +75,7 @@ export const formatApiInfo = (apiInfo: Record<string, any>): any => {
       apiInfo.schema.info.extensions['x-antTech-description']
     )
   ) {
-    // 非 op 数据源，直接返回
+    // Non-op data source, return directly
     return apiInfo;
   }
 
@@ -105,11 +105,11 @@ type serviceParam = {
 
 type serviceParams = Record<string, serviceParam>;
 /**
- * 一方化场景下，由于 onex 会对请求的响应做处理
- *  1. 将 Response & Request 中的参数字段会变更为小驼峰写法
- *  onex 相关代码 ： http://gitlab.alipay-inc.com/one-console/sdk/blob/master/src/request.ts#L110
- *  2. 另外要注意：
- *  op 返回的数据，请求参数的类型格式 需要做额外的处理
+ * In a one-party scenario, since onex will process the response to the request
+ * 1. The parameter fields in Response & Request will be changed to camelCase
+ * onex related code: http://gitlab.alipay-inc.com/one-console/sdk/blob/master/src/request.ts#L110
+ * 2. Also note:
+ * The data returned by op and the type format of the request parameters need additional processing
  *  - (name) key.n, (type) string  ==> key: string []
  *  - (name) key.m,  (type) string ===>  key: string []
  *  - (name) key.key1 , (type) string ==> key: {key1:string}
@@ -127,7 +127,7 @@ export function formatParamsForYFH(
     const nameListLength = nameList.length;
 
     if (nameListLength === 1) {
-      // 正常的 key
+      // Normal key
       paramsObject[key] = { ...prop };
     } else if (nameListLength === 2 && nameList[1] !== 'n' && nameList[1] !== 'm') {
       const [childKey] = nameList;
@@ -169,7 +169,7 @@ export function formatParamsForYFH(
   const hasInvoke = Object.keys(paramsObject).filter((param) => param.includes('.')).length > 0;
 
   if (hasInvoke) {
-    // 递归
+    // recursion
     return formatParamsForYFH(paramsObject);
   }
   return paramsObject;

@@ -24,9 +24,6 @@ export type GenerateServiceProps = {
   requestLibPath?: string;
   requestOptionsType?: string;
   requestImportStatement?: string;
-  /**
-   * api 的前缀
-   */
   apiPrefix?:
     | string
     | ((params: {
@@ -37,38 +34,28 @@ export type GenerateServiceProps = {
         autoExclude?: boolean;
       }) => string);
   /**
-   * 生成的文件夹的路径
+   * The path to the generated folder
    */
   serversPath?: string;
   /**
-   * Swagger 2.0 或 OpenAPI 3.0 的地址
+   * The URL of Swagger 2.0 or OpenAPI 3.0
    */
   schemaPath?: string;
-  /**
-   * 项目名称
-   */
   projectName?: string;
-  /**
-   * 文档登录凭证
-   */
   authorization?: string;
 
   hook?: {
     /** change open api data after constructor */
     afterOpenApiDataInited?: (openAPIData: OpenAPIObject) => OpenAPIObject;
 
-    /** 自定义函数名称 */
     customFunctionName?: (data: APIDataType) => string;
-    /** 自定义类型名称 */
     customTypeName?: (data: APIDataType) => string;
-    /** 自定义 options 默认值 */
     customOptionsDefaultValue?: (data: OperationObject) =>  Record<string, any> | undefined;
-    /** 自定义类名 */
     customClassName?: (tagName: string) => string;
 
     /**
-     * 自定义获取type hook
-     * 返回非字符串将使用默认方法获取type
+     * Customize the type hook
+     * Return non-strings to use the default method to get the type
      * @example set number to string
      * function customType(schemaObject,namespace){
      *  if(schemaObject.type==='number' && !schemaObject.format){
@@ -83,9 +70,9 @@ export type GenerateServiceProps = {
     ) => string;
 
     /**
-     * 自定义生成文件名，可返回多个，表示生成多个文件
-     * 返回为空，则使用默认的获取方法获取
-     * @example  使用operationId生成文件名
+     * Customize the generated file name, multiple files can be returned, indicating that multiple files are generated
+     * If the return value is empty, the default acquisition method is used to obtain
+     * @example Generate file name using operationId
      * function customFileNames(operationObject,apiPath){
      *   const operationId=operationObject.operationId;
      *   if (!operationId) {
@@ -117,29 +104,26 @@ export type GenerateServiceProps = {
   namespace?: string;
 
   /**
-   * 默认为false，true时使用null代替可选
+   * The default value is false. When true, null is used instead of optional.
    */
   nullable?: boolean;
 
   mockFolder?: string;
   /**
-   * 模板文件的文件路径
+   * The file path of the template file
    */
   templatesFolder?: string;
 
-  /**
-   * 枚举样式
-   */
   enumStyle?: 'string-literal' | 'enum';
 
   /**
-   * response中数据字段
+   * Data fields in response
    * example: ['result', 'res']
    */
   dataFields?: string[];
 
   /**
-   * 模板文件、请求函数采用小驼峰命名
+   * Template files and request functions are named in camelCase
    */
   isCamelCase?: boolean;
 };
@@ -150,7 +134,7 @@ const converterSwaggerToOpenApi = (swagger: any) => {
   }
   return new Promise((resolve, reject) => {
     converter.convertObj(swagger, {}, (err, options) => {
-      Log(['💺 将 Swagger 转化为 openAPI']);
+      Log(['💺 Convert Swagger to openAPI']);
       if (err) {
         reject(err);
         return;
@@ -194,7 +178,7 @@ const getOpenAPIConfig = async (schemaPath: string, authorization?: string) => {
   return openAPI;
 };
 
-// 从 appName 生成 service 数据
+// Generate service data from appName
 export const generateService = async ({
   authorization,
   requestLibPath,

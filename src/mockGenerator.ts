@@ -9,31 +9,31 @@ import pinyin from 'tiny-pinyin';
 Mock.Random.extend({
   country() {
     const data = [
-      '阿根廷',
-      '澳大利亚',
-      '巴西',
-      '加拿大',
-      '中国',
-      '法国',
-      '德国',
-      '印度',
-      '印度尼西亚',
-      '意大利',
-      '日本',
-      '韩国',
-      '墨西哥',
-      '俄罗斯',
-      '沙特阿拉伯',
-      '南非',
-      '土耳其',
-      '英国',
-      '美国',
+      'Argentina',
+      'Australia',
+      'Brazil',
+      'Canada',
+      'China',
+      'France',
+      'Germany',
+      'India',
+      'Indonesia',
+      'Italy',
+      'Japan',
+      'South Korea',
+      'Mexico',
+      'Russia',
+      'Saudi Arabia',
+      'South Africa',
+      'Turkey',
+      'United Kingdom',
+      'United States',
     ];
     const id = (Math.random() * data.length).toFixed();
     return data[id];
   },
   phone() {
-    const phonepreFix = ['111', '112', '114']; // 自己写前缀哈
+    const phonepreFix = ['111', '112', '114'];
     return this.pick(phonepreFix) + Mock.mock(/\d{8}/); // Number()
   },
   status() {
@@ -58,27 +58,33 @@ Mock.Random.extend({
     return avatar[id];
   },
   group() {
-    const data = ['体验技术部', '创新科技组', '前端 6 组', '区块链平台部', '服务技术部'];
+    const data = [
+      'Experience Technology Department',
+      'Innovation Technology Group',
+      'Front-end Group 6',
+      'Blockchain Platform Department',
+      'Service Technology Department',
+    ];
     const id = (Math.random() * data.length).toFixed();
     return data[id];
   },
   label() {
     const label = [
-      '很有想法的',
-      '小清新',
-      '傻白甜',
-      '阳光少年',
-      '大咖',
-      '健身达人',
-      '程序员',
-      '算法工程师',
-      '川妹子',
-      '名望程序员',
-      '大长腿',
-      '海纳百川',
-      '专注设计',
-      '爱好广泛',
-      'IT 互联网',
+      'Very thoughtful',
+      'fresh',
+      'silly and innocent',
+      'sunny boy',
+      'big shot',
+      'fitness expert',
+      'programmer',
+      'algorithm engineer',
+      'Sichuan girl',
+      'famous programmer',
+      'long legs',
+      'embracing all rivers',
+      'focused on design',
+      'wide range of interests',
+      'IT Internet',
     ];
     const id = (Math.random() * label.length).toFixed();
     return label[id];
@@ -221,7 +227,7 @@ const mockGenerator = async ({ openAPI, mockFolder }: genMockDataServerConfig) =
     }
     writeFile(mockFolder, `${file}.mock.ts`, genMockFiles(mockActionsObj[file]));
   });
-  Log('✅ 生成 mock 文件成功');
+  Log('✅ Generate mock files successfully');
 };
 
 export { mockGenerator };

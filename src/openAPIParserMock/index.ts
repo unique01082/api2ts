@@ -124,7 +124,7 @@ class OpenAPIGeneratorMockJs {
     let schemaRef = schema.$ref;
 
     if (schemaRef) {
-      // 如果之前已经使用过该引用结构，直接返回null,不然会陷入无限递归的情况
+      // If the reference structure has been used before, return null directly, otherwise it will fall into infinite recursion.
       if (schemaSet.has(schemaRef)) {
         return null;
       } else {
