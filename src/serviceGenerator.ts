@@ -405,6 +405,7 @@ class ServiceGenerator {
     }
     // Generate index file
     this.genFileFromTemplate(`index.ts`, 'serviceIndex', {
+      namespace: this.config.namespace,
       list: this.classNameList,
       disableTypeCheck: false,
     });
@@ -896,6 +897,9 @@ class ServiceGenerator {
     type: TypescriptFileType,
     params: Record<string, any>,
   ): boolean {
+    // console.log('fileName :>> ', fileName);
+    // console.log('type :>> ', type);
+    // console.log('params :>> ', params);
     try {
       const template = this.getTemplate(type);
       // Set output to not escape
