@@ -77,7 +77,7 @@ function getTypeLastName(typeName) {
 }
 
 // Type declaration filter keywords
-const resolveTypeName = (typeName: string) => {
+export const resolveTypeName = (typeName: string) => {
   if (ReservedDict.check(typeName)) {
     return `__openAPI__${typeName}`;
   }
@@ -109,7 +109,7 @@ function getRefName(refObject: any): string {
   return resolveTypeName(refPaths[refPaths.length - 1]) as string;
 }
 
-const defaultGetType = (schemaObject: SchemaObject | undefined, namespace: string = ''): string => {
+export const defaultGetType = (schemaObject: SchemaObject | undefined, namespace: string = ''): string => {
   if (schemaObject === undefined || schemaObject === null) {
     return 'any';
   }
