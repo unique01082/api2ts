@@ -5,10 +5,18 @@ import https from 'https';
 import fetch from 'node-fetch';
 import type { OpenAPIObject, OperationObject, SchemaObject } from 'openapi3-ts';
 import converter from 'swagger2openapi';
-import Log from './log';
+import Log, { LogSnap } from './log';
 import { mockGenerator } from './mockGenerator';
 import { ServiceGenerator } from './serviceGenerator';
 import type { APIDataType } from './serviceGenerator';
+import {
+  buildSnapshot,
+  loadSnapshot,
+  saveSnapshot,
+  computeDiff,
+  printDiffReport,
+  confirmRemovals,
+} from './snapshot';
 
 const getImportStatement = (requestLibPath: string) => {
   if (requestLibPath && requestLibPath.startsWith('import')) {
@@ -126,6 +134,12 @@ export type GenerateServiceProps = {
    * Template files and request functions are named in camelCase
    */
   isCamelCase?: boolean;
+
+  /**
+   * Enable diff mode - compares current OpenAPI spec with previous snapshot.
+   * When enabled, shows added/removed/modified APIs and prompts for removal confirmation.
+   */
+  diffMode?: boolean;
 };
 
 const converterSwaggerToOpenApi = (swagger: any) => {
@@ -186,10 +200,25 @@ export const generateService = async ({
   mockFolder,
   nullable = false,
   requestOptionsType = '{[key: string]: any}',
+  diffMode = false,
   ...rest
 }: GenerateServiceProps) => {
   const openAPI = await getOpenAPIConfig(schemaPath, authorization);
+  if (!openAPI) {
+    LogSnap('Failed to fetch OpenAPI spec. Aborting.');
+    return;
+  }
+
   const requestImportStatement = getImportStatement(requestLibPath);
+
+  if (diffMode) {
+    const proceed = await runDiffCheck(openAPI, schemaPath);
+    if (!proceed) {
+      LogSnap('Generation cancelled by user.');
+      return;
+    }
+  }
+
   const serviceGenerator = new ServiceGenerator(
     {
       namespace: 'API',
@@ -210,4 +239,32 @@ export const generateService = async ({
       mockFolder: mockFolder || './mocks/',
     });
   }
+
+  if (diffMode) {
+    const currentSnapshot = buildSnapshot(openAPI, schemaPath);
+    saveSnapshot(currentSnapshot);
+    LogSnap('Snapshot saved.');
+  }
 };
+
+async function runDiffCheck(openAPI: OpenAPIObject, schemaPath: string): Promise<boolean> {
+  const currentSnapshot = buildSnapshot(openAPI, schemaPath);
+  const previousSnapshot = loadSnapshot();
+  const report = computeDiff(previousSnapshot, currentSnapshot);
+
+  if (!previousSnapshot && currentSnapshot.apis.length > 0) {
+    LogSnap('First time running with --diff. Initial snapshot will be created after generation.');
+    return true;
+  }
+
+  printDiffReport(report);
+
+  if (report.removed.length > 0) {
+    const confirmed = await confirmRemovals(report.removed);
+    if (!confirmed) {
+      return false;
+    }
+  }
+
+  return true;
+}

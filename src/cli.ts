@@ -4,6 +4,8 @@ import chalk from 'chalk';
 import { cosmiconfigSync } from 'cosmiconfig';
 import { generateService, GenerateServiceProps } from './index';
 
+const useDiff = process.argv.includes('--diff');
+
 const explorerSync = cosmiconfigSync('openapi2ts');
 const searchedFor = explorerSync.search();
 
@@ -15,7 +17,7 @@ async function run() {
         : [searchedFor.config];
 
       for (const config of configs) {
-        await generateService(config);
+        await generateService({ ...config, diffMode: useDiff });
       }
     } else {
       throw new Error('config is not found');
