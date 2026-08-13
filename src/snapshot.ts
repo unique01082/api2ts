@@ -14,19 +14,20 @@ import {
   PropertyDiff,
 } from './types';
 
-const SNAPSHOT_FILENAME = '.openapi-snapshot.json';
 const SNAPSHOT_VERSION = '1.0';
 
 function createHash(data: string): string {
   return crypto.createHash('md5').update(data).digest('hex');
 }
 
-function getSnapshotPath(): string {
-  return join(process.cwd(), SNAPSHOT_FILENAME);
+// Namespaced per schemaPath so multiple configs in the same project don't clobber each other's snapshot
+function getSnapshotPath(schemaPath: string): string {
+  const schemaKey = createHash(schemaPath).slice(0, 8);
+  return join(process.cwd(), `.openapi-snapshot.${schemaKey}.json`);
 }
 
-export function loadSnapshot(): ApiSnapshot | null {
-  const path = getSnapshotPath();
+export function loadSnapshot(schemaPath: string): ApiSnapshot | null {
+  const path = getSnapshotPath(schemaPath);
   if (!existsSync(path)) {
     return null;
   }
@@ -34,18 +35,18 @@ export function loadSnapshot(): ApiSnapshot | null {
     const raw = readFileSync(path, 'utf-8');
     const data = JSON.parse(raw) as ApiSnapshot;
     if (!data || !data.version || !data.schemaHash || !Array.isArray(data.apis)) {
-      console.warn(chalk.yellow(`[snapshot] ${SNAPSHOT_FILENAME} is corrupted, treating as first run.`));
+      console.warn(chalk.yellow(`[snapshot] ${path} is corrupted, treating as first run.`));
       return null;
     }
     return data;
   } catch {
-    console.warn(chalk.yellow(`[snapshot] Failed to read ${SNAPSHOT_FILENAME}, treating as first run.`));
+    console.warn(chalk.yellow(`[snapshot] Failed to read ${path}, treating as first run.`));
     return null;
   }
 }
 
 export function saveSnapshot(snapshot: ApiSnapshot): void {
-  const path = getSnapshotPath();
+  const path = getSnapshotPath(snapshot.schemaPath);
   writeFileSync(path, JSON.stringify(snapshot, null, 2), 'utf-8');
 }
 
@@ -377,6 +378,15 @@ export function printDiffReport(report: FullDiffReport): void {
 export function confirmRemovals(removed: ApiDiff[]): Promise<boolean> {
   if (removed.length === 0) {
     return Promise.resolve(true);
+  }
+
+  if (!process.stdin.isTTY) {
+    console.log(
+      chalk.red('[snapshot]') +
+        ` ${removed.length} API${removed.length === 1 ? '' : 's'} would be removed, but no interactive terminal is available to confirm.`,
+    );
+    console.log(chalk.dim('  Aborting generation to avoid accidental deletions in a non-interactive environment (e.g. CI).'));
+    return Promise.resolve(false);
   }
 
   return new Promise((resolve) => {

@@ -249,7 +249,7 @@ export const generateService = async ({
 
 async function runDiffCheck(openAPI: OpenAPIObject, schemaPath: string): Promise<boolean> {
   const currentSnapshot = buildSnapshot(openAPI, schemaPath);
-  const previousSnapshot = loadSnapshot();
+  const previousSnapshot = loadSnapshot(schemaPath);
   const report = computeDiff(previousSnapshot, currentSnapshot);
 
   if (!previousSnapshot && currentSnapshot.apis.length > 0) {

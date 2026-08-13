@@ -17,7 +17,7 @@ async function run() {
         : [searchedFor.config];
 
       for (const config of configs) {
-        await generateService({ ...config, diffMode: useDiff });
+        await generateService({ ...config, diffMode: useDiff || config.diffMode });
       }
     } else {
       throw new Error('config is not found');
