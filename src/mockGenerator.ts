@@ -135,6 +135,7 @@ const genByTemp = ({
   parameters,
   status,
   data,
+  msw,
 }: {
   method: string;
   path: string;
@@ -148,6 +149,7 @@ const genByTemp = ({
   }[];
   status: string;
   data: string;
+  msw: boolean;
 }) => {
   if (!['get', 'put', 'post', 'delete', 'patch'].includes(method.toLocaleLowerCase())) {
     return '';
@@ -160,23 +162,31 @@ const genByTemp = ({
     }
   });
 
+  if (msw) {
+    return `'${method.toUpperCase()} ${securityPath}': ${data}`;
+  }
+
   return `'${method.toUpperCase()} ${securityPath}': (req: Request, res: Response) => {
     res.status(${status}).send(${data});
   }`;
 };
 
-const genMockFiles = (mockFunction: string[]) => {
+const genMockFiles = (mockFunction: string[], msw: boolean) => {
   return prettierFile(` 
 // @ts-ignore
-import { Request, Response } from 'express';
+${msw ? '' : "import { Request, Response } from 'express';"}
 
 export default {
 ${mockFunction.join('\n,')}
     }`)[0];
 };
-export type genMockDataServerConfig = { openAPI: any; mockFolder: string };
+export type genMockDataServerConfig = {
+  openAPI: any;
+  mockFolder: string;
+  mockConfig?: { msw?: boolean };
+};
 
-const mockGenerator = async ({ openAPI, mockFolder }: genMockDataServerConfig) => {
+const mockGenerator = async ({ openAPI, mockFolder, mockConfig = {} }: genMockDataServerConfig) => {
   const openAPParse = new OpenAPIParserMock(openAPI);
   const docs = openAPParse.parser();
   const pathList = Object.keys(docs.paths);
@@ -208,6 +218,7 @@ const mockGenerator = async ({ openAPI, mockFolder }: genMockDataServerConfig) =
           parameters: methodConfig.parameters,
           status: '200',
           data: JSON.stringify(data),
+          msw: Boolean(mockConfig.msw),
         });
         if (tempFile) {
           mockActionsObj[conte].push(tempFile);
@@ -219,13 +230,14 @@ const mockGenerator = async ({ openAPI, mockFolder }: genMockDataServerConfig) =
     if (!file || file === 'undefined') {
       return;
     }
+    const outputFileName = `${file}${mockConfig.msw ? '' : '.mock'}.ts`;
     if (file.includes('/')) {
-      const dirName = dirname(join(mockFolder, `${file}.mock.ts`));
+      const dirName = dirname(join(mockFolder, outputFileName));
       if (!fs.existsSync(dirName)) {
         fs.mkdirSync(dirName);
       }
     }
-    writeFile(mockFolder, `${file}.mock.ts`, genMockFiles(mockActionsObj[file]));
+    writeFile(mockFolder, outputFileName, genMockFiles(mockActionsObj[file], Boolean(mockConfig.msw)));
   });
   Log('✅ Generate mock files successfully');
 };

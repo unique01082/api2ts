@@ -121,6 +121,10 @@ export type GenerateServiceProps = {
   nullable?: boolean;
 
   mockFolder?: string;
+  /** Generate object-valued mock handlers for MSW-compatible consumers. */
+  mockConfig?: {
+    msw?: boolean;
+  };
   /**
    * The file path of the template file
    */
@@ -239,6 +243,7 @@ export const generateService = async ({
     await mockGenerator({
       openAPI,
       mockFolder: mockFolder || './mocks/',
+      mockConfig: rest.mockConfig || {},
     });
   }
 

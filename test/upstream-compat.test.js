@@ -173,11 +173,39 @@ const testNumericAndReservedControllerNamesCompile = async () => {
   }
 };
 
+const testMswMocksAreOptIn = async () => {
+  const outputRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'api2ts-mocks-'));
+  const schemaPath = path.join(__dirname, 'example-files/apispec_1.json');
+  const legacyPath = path.join(outputRoot, 'legacy');
+  const mswPath = path.join(outputRoot, 'msw');
+
+  try {
+    await generateService({ schemaPath, serversPath: path.join(outputRoot, 'services-legacy'), mockFolder: legacyPath });
+    await generateService({
+      schemaPath,
+      serversPath: path.join(outputRoot, 'services-msw'),
+      mockFolder: mswPath,
+      mockConfig: { msw: true },
+    });
+
+    const legacySource = fs.readFileSync(path.join(legacyPath, 'list.mock.ts'), 'utf8');
+    const mswSource = fs.readFileSync(path.join(mswPath, 'list.ts'), 'utf8');
+    assert.match(legacySource, /import { Request, Response } from 'express'/);
+    assert.match(legacySource, /\(req: Request, res: Response\) =>/);
+    assert.doesNotMatch(mswSource, /from 'express'/);
+    assert.doesNotMatch(mswSource, /\(req: Request, res: Response\) =>/);
+    assert.match(mswSource, /'GET [^']+': {/);
+  } finally {
+    fs.rmSync(outputRoot, { recursive: true, force: true });
+  }
+};
+
 const run = async () => {
   await testAuthorizationHeader();
   await testDeclareTypeIsOptIn();
   await testApiPrefixDeduplicationCanBeDisabled();
   await testNumericAndReservedControllerNamesCompile();
+  await testMswMocksAreOptIn();
 };
 
 run().catch((error) => {
