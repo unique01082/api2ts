@@ -121,7 +121,7 @@ class OpenAPIGeneratorMockJs {
   }
 
   sampleFromSchema = (schema: any, propsName?: string[], schemaSet: Set<string> = new Set()) => {
-    let schemaRef = schema.$ref;
+    let schemaRef = schema?.$ref;
 
     if (schemaRef) {
       // If the reference structure has been used before, return null directly, otherwise it will fall into infinite recursion.

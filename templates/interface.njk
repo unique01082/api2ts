@@ -1,8 +1,11 @@
 declare namespace {{ namespace }} {
   {% for type in list -%}
+    {%- set useInterface = declareType === 'interface' and not type.isEnum and type.props.length === 1 and (type.props[0].length !== 1 or not type.props[0][0].$ref or type.props[0][0].name) %}
     {%- if type.props.length %}
       {%- if type.isEnum %}
         enum {{ type.typeName | safe }} 
+      {%- elif useInterface %}
+        interface {{ type.typeName | safe }}
       {%- else %}
         type {{ type.typeName | safe }} =
       {%- endif %}

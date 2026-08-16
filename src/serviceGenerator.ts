@@ -94,6 +94,9 @@ export const resolveTypeName = (typeName: string) => {
     );
     return `Pinyin_${name}`;
   }
+  if (/^\d/.test(name)) {
+    return `__openAPI__${name}`;
+  }
   if (!/[\u3220-\uFA29]/.test(name) && !/^\d$/.test(name)) {
     return name;
   }
@@ -315,6 +318,7 @@ class ServiceGenerator {
     this.config = {
       projectName: 'api',
       templatesFolder: join(__dirname, '../', 'templates'),
+      dedupeApiPrefix: true,
       ...config,
     };
     if (this.config.hook?.afterOpenApiDataInited) {
@@ -379,6 +383,7 @@ class ServiceGenerator {
       // namespace: 'API',
       list: this.getInterfaceTP(),
       disableTypeCheck: false,
+      declareType: this.config.declareType || 'type',
     });
     // Generate controller files
     const prettierError = [];
@@ -393,6 +398,7 @@ class ServiceGenerator {
           namespace: this.config.namespace,
           requestOptionsType: this.config.requestOptionsType,
           requestImportStatement: this.config.requestImportStatement,
+          formDataJsonBlob: Boolean(this.config.formDataJsonBlob),
           disableTypeCheck: false,
           ...tp,
         },
@@ -537,10 +543,10 @@ class ServiceGenerator {
 
                 if (prefix.startsWith("'") || prefix.startsWith('"') || prefix.startsWith('`')) {
                   const finalPrefix = prefix.slice(1, prefix.length - 1);
-                  if (
+                  const alreadyPrefixed =
                     formattedPath.startsWith(finalPrefix) ||
-                    formattedPath.startsWith(`/${finalPrefix}`)
-                  ) {
+                    formattedPath.startsWith(`/${finalPrefix}`);
+                  if (this.config.dedupeApiPrefix && alreadyPrefixed) {
                     return formattedPath;
                   }
                   return `${finalPrefix}${formattedPath}`;
@@ -620,7 +626,7 @@ class ServiceGenerator {
       return null;
     }
     const reqContent: ContentObject = reqBody.content;
-    if (typeof reqContent !== 'object') {
+    if (!reqContent || typeof reqContent !== 'object' || Object.keys(reqContent).length === 0) {
       return null;
     }
     let mediaType = Object.keys(reqContent)[0];

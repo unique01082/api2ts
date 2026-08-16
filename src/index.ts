@@ -32,6 +32,8 @@ export type GenerateServiceProps = {
   requestLibPath?: string;
   requestOptionsType?: string;
   requestImportStatement?: string;
+  /** Prefer interface declarations for object-shaped schemas. */
+  declareType?: 'type' | 'interface';
   apiPrefix?:
     | string
     | ((params: {
@@ -41,6 +43,8 @@ export type GenerateServiceProps = {
         functionName: string;
         autoExclude?: boolean;
       }) => string);
+  /** Preserve a matching literal API prefix instead of adding it again. Defaults to true. */
+  dedupeApiPrefix?: boolean;
   /**
    * The path to the generated folder
    */
@@ -117,6 +121,12 @@ export type GenerateServiceProps = {
   nullable?: boolean;
 
   mockFolder?: string;
+  /** Generate object-valued mock handlers for MSW-compatible consumers. */
+  mockConfig?: {
+    msw?: boolean;
+  };
+  /** Encode object-valued multipart fields as application/json Blob parts. Defaults to false. */
+  formDataJsonBlob?: boolean;
   /**
    * The file path of the template file
    */
@@ -165,9 +175,7 @@ export const getSchema = async (schemaPath: string, authorization?: string) => {
       const agent = new protocol.Agent({
         rejectUnauthorized: false,
       });
-      const headers = {
-        authorization,
-      };
+      const headers = authorization ? { authorization } : {};
       const json = await fetch(schemaPath, { agent, headers }).then((rest) => rest.json());
       return json;
     } catch (error) {
@@ -237,6 +245,7 @@ export const generateService = async ({
     await mockGenerator({
       openAPI,
       mockFolder: mockFolder || './mocks/',
+      mockConfig: rest.mockConfig || {},
     });
   }
 
