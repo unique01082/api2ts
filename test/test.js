@@ -1,6 +1,7 @@
 const assert = require('assert');
 const path = require('path');
 const fs = require('fs');
+const ts = require('typescript');
 
 const openAPI = require('../dist/index');
 
@@ -74,6 +75,42 @@ const gen = async () => {
     serversPath: './servers/name/camel-case',
     isCamelCase: true,
   });
+
+  const reservedTagsServersPath = path.join(__dirname, 'servers/reserved-controller-tags');
+  await openAPI.generateService({
+    schemaPath: `${__dirname}/example-files/swagger-reserved-controller-tags.json`,
+    serversPath: reservedTagsServersPath,
+    requestLibPath: './request',
+  });
+
+  const reservedTagsOutputPath = path.join(reservedTagsServersPath, 'api');
+  fs.writeFileSync(
+    path.join(reservedTagsOutputPath, 'request.ts'),
+    'export default function request<T>(_url: string, _options: unknown): Promise<T> { return Promise.resolve(undefined as T); }\n',
+  );
+
+  const reservedTagsProgram = ts.createProgram(
+    fs
+      .readdirSync(reservedTagsOutputPath)
+      .filter((fileName) => fileName.endsWith('.ts'))
+      .map((fileName) => path.join(reservedTagsOutputPath, fileName)),
+    {
+      module: ts.ModuleKind.CommonJS,
+      moduleResolution: ts.ModuleResolutionKind.NodeJs,
+      noEmit: true,
+      skipLibCheck: true,
+      target: ts.ScriptTarget.ES2015,
+    },
+  );
+  const reservedTagsDiagnostics = ts
+    .getPreEmitDiagnostics(reservedTagsProgram)
+    .map((diagnostic) => ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'));
+  assert.deepStrictEqual(reservedTagsDiagnostics, []);
+
+  const reservedTagsIndex = fs.readFileSync(path.join(reservedTagsOutputPath, 'index.ts'), 'utf8');
+  assert(!/import\s+\*\s+as\s+(?:import|export)\b/.test(reservedTagsIndex));
+  assert(reservedTagsIndex.includes("from './import'"));
+  assert(reservedTagsIndex.includes("from './export'"));
 
   await openAPI.generateService({
     schemaPath: `${__dirname}/example-files/swagger-file-convert.json`,

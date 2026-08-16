@@ -341,7 +341,7 @@ class ServiceGenerator {
 
         tags.forEach((tagString) => {
           const tag = this.config.isCamelCase
-            ? camelCase(resolveTypeName(tagString))
+            ? camelCase(tagString)
             : resolveTypeName(tagString);
 
           if (!this.apiData[tag]) {
@@ -600,7 +600,8 @@ class ServiceGenerator {
         if (genParams.length) {
           this.classNameList.push({
             fileName: className,
-            controllerName: className,
+            controllerName:
+              typeof className === 'string' ? resolveTypeName(className) : className,
           });
         }
         return {
