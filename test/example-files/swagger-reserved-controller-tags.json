@@ -1,0 +1,31 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Reserved controller tags regression",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/imports": {
+      "get": {
+        "operationId": "listImports",
+        "tags": ["Import"],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/exports": {
+      "get": {
+        "operationId": "listExports",
+        "tags": ["Export"],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  }
+}
