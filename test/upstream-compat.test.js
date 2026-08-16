@@ -43,6 +43,27 @@ const assertTypescriptParses = (filePath) => {
   assert.deepStrictEqual(diagnostics, []);
 };
 
+const compileGeneratedTypescript = (outputPath) => {
+  fs.writeFileSync(
+    path.join(outputPath, 'request.ts'),
+    'export default function request<T>(_url: string, _options: unknown): Promise<T> { return Promise.resolve(undefined as T); }\n',
+  );
+  const files = fs
+    .readdirSync(outputPath)
+    .filter((fileName) => fileName.endsWith('.ts'))
+    .map((fileName) => path.join(outputPath, fileName));
+  const program = ts.createProgram(files, {
+    module: ts.ModuleKind.CommonJS,
+    moduleResolution: ts.ModuleResolutionKind.NodeJs,
+    noEmit: true,
+    skipLibCheck: true,
+    target: ts.ScriptTarget.ES2015,
+  });
+  return ts
+    .getPreEmitDiagnostics(program)
+    .map((diagnostic) => ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'));
+};
+
 const testDeclareTypeIsOptIn = async () => {
   const outputRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'api2ts-declare-type-'));
   const schemaPath = path.join(__dirname, 'example-files/swagger-custom-hook.json');
@@ -111,10 +132,52 @@ const testApiPrefixDeduplicationCanBeDisabled = async () => {
   }
 };
 
+const testNumericAndReservedControllerNamesCompile = async () => {
+  const outputRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'api2ts-controller-names-'));
+  const schemaPath = path.join(outputRoot, 'openapi.json');
+  fs.writeFileSync(
+    schemaPath,
+    JSON.stringify({
+      openapi: '3.0.0',
+      info: { title: 'controller names', version: '1.0.0' },
+      paths: {
+        '/numeric': {
+          get: {
+            operationId: 'getNumeric',
+            tags: ['2.0 User'],
+            responses: { 200: { description: 'OK' } },
+          },
+        },
+        '/imports': {
+          get: {
+            operationId: 'getImports',
+            tags: ['Import'],
+            responses: { 200: { description: 'OK' } },
+          },
+        },
+      },
+    }),
+  );
+
+  try {
+    await generateService({ schemaPath, serversPath: outputRoot, requestLibPath: './request' });
+    const generatedPath = path.join(outputRoot, 'api');
+    const diagnostics = compileGeneratedTypescript(generatedPath);
+    const indexSource = fs.readFileSync(path.join(generatedPath, 'index.ts'), 'utf8');
+
+    assert.deepStrictEqual(diagnostics, []);
+    assert.match(indexSource, /import \* as __openAPI__20User from '\.\/20User'/);
+    assert.match(indexSource, /import \* as __openAPI__import from '\.\/import'/);
+  } finally {
+    fs.rmSync(outputRoot, { recursive: true, force: true });
+  }
+};
+
 const run = async () => {
   await testAuthorizationHeader();
   await testDeclareTypeIsOptIn();
   await testApiPrefixDeduplicationCanBeDisabled();
+  await testNumericAndReservedControllerNamesCompile();
 };
 
 run().catch((error) => {

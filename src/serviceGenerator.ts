@@ -94,6 +94,9 @@ export const resolveTypeName = (typeName: string) => {
     );
     return `Pinyin_${name}`;
   }
+  if (/^\d/.test(name)) {
+    return `__openAPI__${name}`;
+  }
   if (!/[\u3220-\uFA29]/.test(name) && !/^\d$/.test(name)) {
     return name;
   }
