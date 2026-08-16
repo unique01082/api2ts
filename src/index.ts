@@ -43,6 +43,8 @@ export type GenerateServiceProps = {
         functionName: string;
         autoExclude?: boolean;
       }) => string);
+  /** Preserve a matching literal API prefix instead of adding it again. Defaults to true. */
+  dedupeApiPrefix?: boolean;
   /**
    * The path to the generated folder
    */

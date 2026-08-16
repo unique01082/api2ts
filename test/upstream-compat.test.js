@@ -69,9 +69,52 @@ const testDeclareTypeIsOptIn = async () => {
   }
 };
 
+const testApiPrefixDeduplicationCanBeDisabled = async () => {
+  const outputRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'api2ts-prefix-'));
+  const schemaPath = path.join(outputRoot, 'openapi.json');
+  fs.writeFileSync(
+    schemaPath,
+    JSON.stringify({
+      openapi: '3.0.0',
+      info: { title: 'prefix test', version: '1.0.0' },
+      paths: {
+        '/api/users': {
+          get: {
+            operationId: 'listUsers',
+            tags: ['Users'],
+            responses: { 200: { description: 'OK' } },
+          },
+        },
+      },
+    }),
+  );
+
+  try {
+    await generateService({
+      schemaPath,
+      serversPath: path.join(outputRoot, 'default'),
+      apiPrefix: "'/api'",
+    });
+    await generateService({
+      schemaPath,
+      serversPath: path.join(outputRoot, 'disabled'),
+      apiPrefix: "'/api'",
+      dedupeApiPrefix: false,
+    });
+
+    const defaultController = fs.readFileSync(path.join(outputRoot, 'default/api/users.ts'), 'utf8');
+    const disabledController = fs.readFileSync(path.join(outputRoot, 'disabled/api/users.ts'), 'utf8');
+    assert.match(defaultController, /request(?:<[^>]+>)?\(`\/api\/users`/);
+    assert.match(disabledController, /request(?:<[^>]+>)?\(`\/api\/api\/users`/);
+  } finally {
+    fs.rmSync(outputRoot, { recursive: true, force: true });
+  }
+};
+
 const run = async () => {
   await testAuthorizationHeader();
   await testDeclareTypeIsOptIn();
+  await testApiPrefixDeduplicationCanBeDisabled();
 };
 
 run().catch((error) => {
