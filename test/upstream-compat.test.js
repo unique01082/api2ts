@@ -200,12 +200,38 @@ const testMswMocksAreOptIn = async () => {
   }
 };
 
+const testJsonFormDataBlobIsOptIn = async () => {
+  const outputRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'api2ts-form-data-'));
+  const schemaPath = path.join(__dirname, 'example-files/swagger-file-convert.json');
+
+  try {
+    await generateService({ schemaPath, serversPath: path.join(outputRoot, 'legacy') });
+    await generateService({
+      schemaPath,
+      serversPath: path.join(outputRoot, 'blob'),
+      formDataJsonBlob: true,
+    });
+
+    const legacySource = fs.readFileSync(path.join(outputRoot, 'legacy/api/fileController.ts'), 'utf8');
+    const blobSource = fs.readFileSync(path.join(outputRoot, 'blob/api/fileController.ts'), 'utf8');
+    assert.match(legacySource, /formData\.append\(ele, JSON\.stringify\(item\)\)/);
+    assert.doesNotMatch(legacySource, /new Blob/);
+    assert.match(
+      blobSource,
+      /formData\.append\(ele, new Blob\(\[JSON\.stringify\(item\)\], { type: 'application\/json' }\)\)/,
+    );
+  } finally {
+    fs.rmSync(outputRoot, { recursive: true, force: true });
+  }
+};
+
 const run = async () => {
   await testAuthorizationHeader();
   await testDeclareTypeIsOptIn();
   await testApiPrefixDeduplicationCanBeDisabled();
   await testNumericAndReservedControllerNamesCompile();
   await testMswMocksAreOptIn();
+  await testJsonFormDataBlobIsOptIn();
 };
 
 run().catch((error) => {

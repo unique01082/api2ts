@@ -125,6 +125,8 @@ export type GenerateServiceProps = {
   mockConfig?: {
     msw?: boolean;
   };
+  /** Encode object-valued multipart fields as application/json Blob parts. Defaults to false. */
+  formDataJsonBlob?: boolean;
   /**
    * The file path of the template file
    */

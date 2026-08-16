@@ -398,6 +398,7 @@ class ServiceGenerator {
           namespace: this.config.namespace,
           requestOptionsType: this.config.requestOptionsType,
           requestImportStatement: this.config.requestImportStatement,
+          formDataJsonBlob: Boolean(this.config.formDataJsonBlob),
           disableTypeCheck: false,
           ...tp,
         },
