@@ -1,8 +1,8 @@
 {
   "name": "@baolq/api2ts",
   "access": "public",
-  "version": "0.1.2",
-  "description": "",
+  "version": "0.2.0",
+  "description": "Generate typed TypeScript API clients from OpenAPI 3 and Swagger 2 specifications.",
   "repository": {
     "type": "git",
     "url": "git+ssh://git@github.com/unique01082/api2ts.git"
