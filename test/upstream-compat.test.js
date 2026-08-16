@@ -1,7 +1,11 @@
 const assert = require('assert');
+const fs = require('fs');
 const http = require('http');
+const os = require('os');
+const path = require('path');
+const ts = require('typescript');
 
-const { getSchema } = require('../dist/index');
+const { generateService, getSchema } = require('../dist/index');
 
 const listen = (server) =>
   new Promise((resolve) => {
@@ -31,8 +35,43 @@ const testAuthorizationHeader = async () => {
   assert.strictEqual(receivedHeaders[1].authorization, 'Bearer secret');
 };
 
+const assertTypescriptParses = (filePath) => {
+  const program = ts.createProgram([filePath], { noEmit: true, skipLibCheck: true });
+  const diagnostics = ts
+    .getPreEmitDiagnostics(program)
+    .map((diagnostic) => ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n'));
+  assert.deepStrictEqual(diagnostics, []);
+};
+
+const testDeclareTypeIsOptIn = async () => {
+  const outputRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'api2ts-declare-type-'));
+  const schemaPath = path.join(__dirname, 'example-files/swagger-custom-hook.json');
+
+  try {
+    await generateService({ schemaPath, serversPath: path.join(outputRoot, 'default') });
+    await generateService({
+      schemaPath,
+      serversPath: path.join(outputRoot, 'interface'),
+      declareType: 'interface',
+    });
+
+    const defaultDeclaration = path.join(outputRoot, 'default/api/typings.d.ts');
+    const interfaceDeclaration = path.join(outputRoot, 'interface/api/typings.d.ts');
+    const defaultSource = fs.readFileSync(defaultDeclaration, 'utf8');
+    const interfaceSource = fs.readFileSync(interfaceDeclaration, 'utf8');
+
+    assert.match(defaultSource, /\btype\s+\w+\s*=/);
+    assert.match(interfaceSource, /\binterface\s+\w+\s*{/);
+    assert.doesNotMatch(interfaceSource, /\binterface\s+\w+\s*=/);
+    assertTypescriptParses(interfaceDeclaration);
+  } finally {
+    fs.rmSync(outputRoot, { recursive: true, force: true });
+  }
+};
+
 const run = async () => {
   await testAuthorizationHeader();
+  await testDeclareTypeIsOptIn();
 };
 
 run().catch((error) => {

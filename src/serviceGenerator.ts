@@ -379,6 +379,7 @@ class ServiceGenerator {
       // namespace: 'API',
       list: this.getInterfaceTP(),
       disableTypeCheck: false,
+      declareType: this.config.declareType || 'type',
     });
     // Generate controller files
     const prettierError = [];

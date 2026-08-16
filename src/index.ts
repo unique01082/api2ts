@@ -32,6 +32,8 @@ export type GenerateServiceProps = {
   requestLibPath?: string;
   requestOptionsType?: string;
   requestImportStatement?: string;
+  /** Prefer interface declarations for object-shaped schemas. */
+  declareType?: 'type' | 'interface';
   apiPrefix?:
     | string
     | ((params: {
