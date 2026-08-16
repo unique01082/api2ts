@@ -626,7 +626,7 @@ class ServiceGenerator {
       return null;
     }
     const reqContent: ContentObject = reqBody.content;
-    if (typeof reqContent !== 'object') {
+    if (!reqContent || typeof reqContent !== 'object' || Object.keys(reqContent).length === 0) {
       return null;
     }
     let mediaType = Object.keys(reqContent)[0];

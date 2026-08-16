@@ -225,6 +225,73 @@ const testJsonFormDataBlobIsOptIn = async () => {
   }
 };
 
+const testEmptyRequestBodyContentDoesNotCrash = async () => {
+  const outputRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'api2ts-empty-body-'));
+  const schemaPath = path.join(outputRoot, 'openapi.json');
+  fs.writeFileSync(
+    schemaPath,
+    JSON.stringify({
+      openapi: '3.0.0',
+      info: { title: 'empty body', version: '1.0.0' },
+      paths: {
+        '/empty': {
+          post: {
+            operationId: 'postEmpty',
+            tags: ['Empty'],
+            requestBody: { content: {} },
+            responses: { 204: { description: 'No content' } },
+          },
+        },
+      },
+    }),
+  );
+
+  try {
+    await generateService({ schemaPath, serversPath: outputRoot });
+    const controllerSource = fs.readFileSync(path.join(outputRoot, 'api/empty.ts'), 'utf8');
+    assert.doesNotMatch(controllerSource, /\bbody\b/);
+  } finally {
+    fs.rmSync(outputRoot, { recursive: true, force: true });
+  }
+};
+
+const testIncompleteMockSchemaDoesNotCrash = async () => {
+  const outputRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'api2ts-incomplete-mock-'));
+  const schemaPath = path.join(outputRoot, 'openapi.json');
+  fs.writeFileSync(
+    schemaPath,
+    JSON.stringify({
+      openapi: '3.0.0',
+      info: { title: 'incomplete mock schema', version: '1.0.0' },
+      paths: {
+        '/items': {
+          get: {
+            operationId: 'listItems',
+            tags: ['Items'],
+            responses: {
+              200: {
+                description: 'OK',
+                content: { 'application/json': { schema: { type: 'array' } } },
+              },
+            },
+          },
+        },
+      },
+    }),
+  );
+
+  try {
+    await generateService({
+      schemaPath,
+      serversPath: path.join(outputRoot, 'services'),
+      mockFolder: path.join(outputRoot, 'mocks'),
+    });
+    assert.ok(fs.existsSync(path.join(outputRoot, 'mocks/listItems.mock.ts')));
+  } finally {
+    fs.rmSync(outputRoot, { recursive: true, force: true });
+  }
+};
+
 const run = async () => {
   await testAuthorizationHeader();
   await testDeclareTypeIsOptIn();
@@ -232,6 +299,8 @@ const run = async () => {
   await testNumericAndReservedControllerNamesCompile();
   await testMswMocksAreOptIn();
   await testJsonFormDataBlobIsOptIn();
+  await testEmptyRequestBodyContentDoesNotCrash();
+  await testIncompleteMockSchemaDoesNotCrash();
 };
 
 run().catch((error) => {
