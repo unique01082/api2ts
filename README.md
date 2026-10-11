@@ -1,5 +1,7 @@
 # @baolq/api2ts
 
+![api2ts brand](docs/brand/logo.svg)
+
 [![npm version](https://img.shields.io/npm/v/@baolq/api2ts)](https://www.npmjs.com/package/@baolq/api2ts)
 [![npm downloads](https://img.shields.io/npm/dm/@baolq/api2ts)](https://www.npmjs.com/package/@baolq/api2ts)
 [![license](https://img.shields.io/npm/l/@baolq/api2ts)](https://www.npmjs.com/package/@baolq/api2ts)
